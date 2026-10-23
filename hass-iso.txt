@@ -1,0 +1,508 @@
+==============================================================
+ OSL / OS PRACTICALS - AIM, BASIC STEPS & COMMANDS (EXP 1 - 10)
+==============================================================
+
+
+--------------------------------------------------------------
+EXPERIMENT 1: Install Ubuntu on Oracle VM VirtualBox
+--------------------------------------------------------------
+AIM:
+To install and configure a Linux environment (Ubuntu) using Oracle VM VirtualBox.
+
+BASIC STEPS (GUI based - no commands):
+1. Download and install Oracle VM VirtualBox.
+2. Download the Ubuntu Desktop ISO image.
+3. Open VirtualBox -> click New -> enter name, select ISO, set RAM and CPU.
+4. Create a virtual hard disk (25 GB or more recommended).
+5. Review System / Display / Storage settings.
+6. Start the VM -> follow the Ubuntu installer (language, keyboard, partitioning).
+7. Set username and password -> finish installation -> reboot the VM.
+
+TROUBLESHOOTING (short):
+- "VT-x/AMD-V disabled" -> enable virtualization in BIOS.
+- Lag in guest OS -> give more RAM/CPU and install Guest Additions.
+
+
+--------------------------------------------------------------
+EXPERIMENT 2: Linux File System Hierarchy & Basic File/Directory Commands
+--------------------------------------------------------------
+AIM:
+To study the Linux file system hierarchy and perform basic file and directory
+operations using shell commands.
+
+BASIC STEPS:
+1. Check current location.
+2. Create a directory and verify it.
+3. Move into the directory and check the path.
+4. Create an empty file and verify it.
+
+COMMANDS:
+pwd
+mkdir Documents
+ls
+cd Documents
+pwd
+touch notes.txt
+ls
+
+OTHER COMMANDS USED / FOR REFERENCE:
+echo "This is my first Linux file" > notes.txt
+cat notes.txt
+cp  source dest
+mv  source dest
+rm  file
+rmdir  emptydir
+clear
+
+
+--------------------------------------------------------------
+EXPERIMENT 3: Users, Groups, Permissions (chmod, chown, chgrp) and ACLs
+--------------------------------------------------------------
+AIM:
+To create and manage users and groups in Linux and configure file and directory
+permissions using chmod, chown, chgrp, and Access Control Lists (ACLs).
+
+BASIC STEPS:
+1. Check current user identity.
+2. Create a group (developers) and two users (student1, student2).
+3. Add both users to the group.
+4. Create a shared directory /project, set group owner and permission 770.
+5. Create a file as student1, set group developers and permission 660.
+6. Edit the file as student2 (group access works).
+7. Create an outsider user and show access is denied.
+8. Use ACL to give outsider read-only access, test it.
+9. Remove the ACL entries.
+
+COMMANDS:
+whoami
+id
+
+sudo groupadd developers
+getent group developers
+
+sudo useradd -m -s /bin/bash student1
+sudo useradd -m -s /bin/bash student2
+id student1
+id student2
+
+sudo usermod -aG developers student1
+sudo usermod -aG developers student2
+groups student1
+groups student2
+
+sudo mkdir /project
+ls -ld /project
+sudo chown root:developers /project
+ls -ld /project
+sudo chmod 770 /project
+ls -ld /project
+
+sudo -u student1 touch /project/student1_file.txt
+sudo -u student1 bash -c 'echo "Created by student1" > /project/student1_file.txt'
+cat /project/student1_file.txt
+sudo chgrp developers /project/student1_file.txt
+sudo chmod 660 /project/student1_file.txt
+ls -l /project/student1_file.txt
+
+sudo -u student2 bash -c 'echo "Edited by student2" >> /project/student1_file.txt'
+cat /project/student1_file.txt
+
+sudo useradd -m -s /bin/bash outsider
+groups outsider
+sudo -u outsider ls /project          # Expected: Permission denied
+
+sudo apt install acl -y
+sudo setfacl -m u:outsider:rx /project
+sudo setfacl -m u:outsider:r /project/student1_file.txt
+getfacl /project/student1_file.txt
+
+sudo -u outsider cat /project/student1_file.txt                                # Success
+sudo -u outsider bash -c 'echo "Edited by outsider" >> /project/student1_file.txt'   # Permission denied
+
+sudo setfacl -x u:outsider /project/student1_file.txt
+sudo setfacl -x u:outsider /project
+getfacl /project/student1_file.txt
+
+
+--------------------------------------------------------------
+EXPERIMENT 4: Shell Scripting (File Handling, Backup, Process Monitoring)
+--------------------------------------------------------------
+AIM:
+To write and execute shell scripts in Linux to automate basic system tasks
+including file creation, backup management, and process monitoring.
+
+BASIC STEPS:
+1. Create a workspace directory.
+2. Write and run the file handling script.
+3. Write and run the backup script.
+4. Write and run the process management script.
+5. Verify all scripts and output files.
+
+COMMANDS:
+mkdir shellprac
+cd shellprac
+
+# --- Script 1: File handling ---
+cat > filehandling.sh << 'EOF'
+#!/bin/bash
+echo "File Handling Started"
+mkdir -p datafiles
+echo "Hello Linux" > datafiles/file1.txt
+echo "Shell Scripting Practical" > datafiles/file2.txt
+echo "Files created successfully"
+ls -l datafiles
+EOF
+bash filehandling.sh
+
+# --- Script 2: Backup ---
+rm -f backup.sh
+echo '#!/bin/bash' > backup.sh
+echo 'echo "Backup Started"' >> backup.sh
+echo 'mkdir -p backupcopy' >> backup.sh
+echo 'cp -r datafiles backupcopy/' >> backup.sh
+echo 'echo "Backup completed successfully"' >> backup.sh
+echo 'ls -l backupcopy' >> backup.sh
+bash backup.sh
+
+# --- Script 3: Process management ---
+rm -f process.sh
+echo '#!/bin/bash' > process.sh
+echo 'echo "Process Management Started"' >> process.sh
+echo 'echo "Current User:"' >> process.sh
+echo 'whoami' >> process.sh
+echo 'echo "Running Processes:"' >> process.sh
+echo 'ps | head -n 5' >> process.sh
+bash process.sh
+
+# --- Verify ---
+ls
+ls backupcopy
+ls datafiles
+
+
+--------------------------------------------------------------
+EXPERIMENT 5: Package Management (apt / apt-cache / dpkg)
+--------------------------------------------------------------
+AIM:
+To install and manage software packages using the Linux package manager
+(apt/apt-cache/dpkg) and understand dependency handling.
+
+BASIC STEPS:
+1. Create a workspace directory.
+2. Check the Linux distribution.
+3. Update the package index.
+4. Search for the package and check its dependencies.
+5. Install the package and verify it.
+6. Test the package (create sample folders, run tree).
+7. Check package status using dpkg.
+8. Remove the package and verify removal.
+
+COMMANDS:
+mkdir pkgprac
+cd pkgprac
+pwd
+cat /etc/os-release | head -n 2
+
+sudo apt-get update
+apt-cache search '^tree$'
+apt-cache depends tree
+sudo apt-get install -y tree
+tree --version
+
+mkdir demo
+mkdir demo/docs
+mkdir demo/images
+touch demo/docs/file1.txt
+touch demo/docs/file2.txt
+touch demo/images/photo1.png
+tree demo
+
+dpkg -l | grep tree
+
+sudo apt-get remove -y tree
+tree --version            # Expected: No such file or directory
+
+
+--------------------------------------------------------------
+EXPERIMENT 6: Apache Web Server and SQLite Database
+--------------------------------------------------------------
+AIM:
+To install and configure an open-source web server (Apache) and a database
+(SQLite), and perform basic web serving and data connectivity testing.
+
+BASIC STEPS:
+1. Create a practical folder.
+2. Update packages and install Apache + SQLite.
+3. Start Apache and test with curl; fix the ServerName warning.
+4. Create a custom web page and test it.
+5. Create a SQLite database, table and insert records.
+6. Display records and do final verification of both.
+
+COMMANDS:
+mkdir webdbprac
+cd webdbprac
+pwd
+
+sudo apt-get update
+sudo apt-get install -y apache2 sqlite3
+
+sudo service apache2 start
+curl http://localhost
+
+echo "ServerName localhost" | sudo tee -a /etc/apache2/apache2.conf
+sudo service apache2 restart
+sudo service apache2 status
+
+echo "<h1>Welcome to Open Source Web Server Practical</h1>" | sudo tee /var/www/html/index.html
+curl http://localhost
+
+sqlite3 student.db "CREATE TABLE students(id INTEGER, name TEXT, course TEXT);"
+sqlite3 student.db "INSERT INTO students VALUES(1, 'Amit', 'Linux');"
+sqlite3 student.db "INSERT INTO students VALUES(2, 'Riya', 'Database');"
+sqlite3 student.db "SELECT * FROM students;"
+
+# Final verification
+curl http://localhost
+sqlite3 student.db "SELECT * FROM students;"
+
+
+--------------------------------------------------------------
+EXPERIMENT 7: Git Version Control (Config, Branching, Merge, Remote Push)
+--------------------------------------------------------------
+AIM:
+To use Git for version control in open-source projects and implement basic
+repository management and collaboration workflows.
+
+BASIC STEPS:
+1. Configure Git with username and email, verify it.
+2. Create a project directory and initialize a repository.
+3. Create README.md and check status.
+4. Stage, commit and view history.
+5. Create a feature branch, switch to it, commit changes.
+6. Switch back to main and merge the feature branch.
+7. Connect to a remote repository and push.
+
+COMMANDS:
+git config --global user.name "Your Name"
+git config --global user.email "your@email.com"
+git config --list
+
+mkdir git-experiment
+cd git-experiment
+git init
+
+echo "# Git Experiment" > README.md
+git status
+
+git add README.md
+git commit -m "Initial commit"
+git log --oneline
+
+git branch feature
+git switch feature
+git add .
+git commit -m "Added feature"
+
+git switch main
+git merge feature
+
+git remote add origin <repository-url>
+git remote -v
+git push -u origin main
+
+
+--------------------------------------------------------------
+EXPERIMENT 8: Open-Source Workflow - Issue Tracking & Contribution Simulation
+--------------------------------------------------------------
+AIM:
+To use open-source development workflow for issue tracking, collaboration, and
+contribution workflow simulation.
+
+BASIC STEPS:
+1. Check Git installation.
+2. Create project folder and initialize Git.
+3. Configure Git user.
+4. Create README and commit it.
+5. Create an issue file (simulates issue tracking).
+6. Create a new branch for the issue and fix it.
+7. Commit the fix and merge into main/master.
+8. Mark the issue closed, check history, final verification.
+
+COMMANDS:
+git --version
+
+mkdir opensourceprac
+cd opensourceprac
+pwd
+git init
+
+git config user.name "Student"
+git config user.email "student@example.com"
+
+echo "# Open Source Project" > README.md
+echo "This is a sample open-source project." >> README.md
+cat README.md
+
+git add README.md
+git commit -m "Initial project setup"
+
+echo "Issue 1: Add project description in README file" > issue1.txt
+cat issue1.txt
+
+git checkout -b fixissue1
+
+echo "Project description: This project demonstrates open-source workflow and issue tracking." >> README.md
+cat README.md
+
+git add README.md
+git commit -m "Fix issue 1 by adding project description"
+
+git checkout master          # use "main" if your system uses main
+git merge fixissue1
+
+echo "Issue 1 Status: Closed after adding project description" > issue1status.txt
+cat issue1status.txt
+
+git log --oneline
+
+ls
+cat README.md
+cat issue1status.txt
+
+
+--------------------------------------------------------------
+EXPERIMENT 9: Build an Open-Source App, Documentation & License Compliance
+--------------------------------------------------------------
+AIM:
+To build and run an open-source application from source code, create
+documentation, and perform license identification and compliance checks.
+
+BASIC STEPS:
+1. Create practical folder.
+2. Check build tools (gcc, make).
+3. Create C source file and Makefile.
+4. Build with make and run the app.
+5. Create README (documentation) and LICENSE files.
+6. Identify the license and run compliance check.
+7. Create NOTICE file.
+8. Clean build files.
+
+COMMANDS:
+mkdir ossprac
+cd ossprac
+pwd
+
+gcc --version
+make --version
+# If not installed:
+sudo apt-get update
+sudo apt-get install -y build-essential
+
+printf '#include <stdio.h>\n\nint main() {\n printf("Hello from Open Source App\\n");\n return 0;\n}\n' > helloapp.c
+cat helloapp.c
+
+printf 'helloapp: helloapp.c\n\tgcc helloapp.c -o helloapp\n\nclean:\n\trm -f helloapp\n' > Makefile
+
+make
+ls -l
+./helloapp
+
+echo "# Hello Open Source App" > README.md
+echo "This is a simple C application created for OSS practical." >> README.md
+echo "Build command: make" >> README.md
+echo "Run command: ./helloapp" >> README.md
+cat README.md
+
+echo "MIT License" > LICENSE
+echo "Permission is hereby granted to use, copy, modify, and distribute this software." >> LICENSE
+echo "This software is provided without warranty." >> LICENSE
+cat LICENSE
+
+head -n 1 LICENSE
+grep -i "MIT" LICENSE
+
+ls README.md LICENSE
+grep -i "Permission" LICENSE
+
+echo "This project uses MIT License." > NOTICE.txt
+echo "Users must keep the LICENSE file while sharing the project." >> NOTICE.txt
+cat NOTICE.txt
+
+make clean
+ls
+
+
+--------------------------------------------------------------
+EXPERIMENT 10: Open Source Contribution (GitHub Fork - Branch - PR)
+--------------------------------------------------------------
+AIM:
+To simulate a basic contribution to an open-source project using Git and GitHub
+by forking a repository, cloning it locally, creating a branch, making a small
+documentation change, committing the change, pushing the branch, and creating a
+Pull Request.
+
+BASIC STEPS:
+1. Create practical folder and check Git.
+2. Configure Git identity.
+3. Fork the repository on GitHub (browser step).
+4. Clone the fork and check status/remote.
+5. Create a contribution branch.
+6. Edit README.md (small documentation change).
+7. Review, stage and commit the change.
+8. Push the branch to GitHub.
+9. Create a Pull Request on GitHub (browser step).
+10. Verify the contribution.
+
+COMMANDS:
+mkdir oss_contribution
+cd oss_contribution
+pwd
+
+git --version
+
+git config --global user.name "Your Name"
+git config --global user.email "your@email.com"
+git config --global --list
+
+# Fork on GitHub (browser): open upstream repo -> click Fork
+
+git clone https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>
+
+git status
+git remote -v
+
+git checkout -b docs/update-readme
+git branch
+
+ls
+cat README.md
+
+echo "" >> README.md
+echo "## Contribution Guide" >> README.md
+echo "Contributions are welcome through a Pull Request." >> README.md
+cat README.md
+
+git status
+git diff
+
+git add README.md
+git status
+git commit -m "docs: improve contribution guide"
+git log -1 --oneline
+
+git push -u origin docs/update-readme
+
+# Create Pull Request on GitHub (browser):
+# Compare & pull request -> Base: upstream main, Compare: your docs/update-readme
+# Title: Improve README contribution guide
+
+git status
+git branch -a
+
+WORKFLOW SUMMARY:
+Fork -> Clone -> Branch -> Modify -> Stage -> Commit -> Push -> Pull Request
+
+==============================================================
+                          END
+==============================================================
